@@ -11,7 +11,7 @@
  * The Use of this code and execution of the applications is at your own risk, I accept no liability!
  */
 // 
-#define APP_VERSION    "0.0.0"//_0
+#define APP_VERSION    "0.0.1"//_0
 #define APP_ID         "io.github.supertoq.clock"
 #define APP_NAME       "Clock"
 #define APP_DOMAINNAME "supertoq-clock"
@@ -41,15 +41,45 @@ typedef struct {               // Für ToastOverlay
 } ToastManager;
 static ToastManager toast_manager = { NULL };
 
+typedef struct { 
+    char time_str[32];       // Für die Zeit
+    GtkWidget *time_label;   // Label
+} AppData;
 
+/* ----- Zeit-Callback ----------------------------------------------- */
+static gboolean time_ticker(gpointer user_data)
+{
+    AppData *app_data = user_data;
 
+    time_t now = time(NULL);
+    struct tm *local_time = localtime(&now);
 
+    // Formatiere die Zeit
+    strftime(app_data->time_str, sizeof(app_data->time_str), "%H:%M:%S", local_time);
 
+    // Setze den Text im Label
+    gtk_label_set_text(GTK_LABEL(app_data->time_label), app_data->time_str);
+
+    return G_SOURCE_CONTINUE;
+}
 /* ------------------------------------------------------------------- */
 /* Aktivierungshandler                                                 */
 /* ------------------------------------------------------------------- */
 static void on_activate(GApplication *app, gpointer user_data)
 {
+    /* ----- CSS-Provider für zusätzliche Anpassungen --------------- */
+    // orange=#db9c4a , lightred=#ff8484 , grey=#c0bfbc
+    GtkCssProvider *provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_string(provider,
+                                                             "label1 {"
+                                                    "  color: #c0bfbc;"
+                                                                    "}"
+                                                                     );
+    gtk_style_context_add_provider_for_display(gdk_display_get_default(),
+    GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(provider);
+
+    AppData *app_data = (AppData *)user_data;
 
     /* ----- Adwaita-Fenster ----------------------------------------- */
     AdwApplicationWindow *adw_win = ADW_APPLICATION_WINDOW(adw_application_window_new(GTK_APPLICATION(app)));
@@ -120,6 +150,12 @@ static void on_activate(GApplication *app, gpointer user_data)
     /* --- Haupt-Box zur ToolbarView hinzufügen ------------------- */
     adw_toolbar_view_set_content(toolbar_view, GTK_WIDGET(main_box));
 
+    /* --- Label erstellen ------------- */
+    app_data->time_label = gtk_label_new(NULL);
+    gtk_widget_set_hexpand(app_data->time_label, TRUE);
+    gtk_widget_set_vexpand(app_data->time_label, TRUE);
+    gtk_box_append(main_box, app_data->time_label);
+
 // !! weitere Elemente hier ...
 
     /* --- Hauptfenster im Application-Objekt ablegen (!) --------- */
@@ -129,7 +165,7 @@ static void on_activate(GApplication *app, gpointer user_data)
     gtk_window_present(GTK_WINDOW(adw_win));
 
     /* ----- Timer starten ---------------------------------------- */
-// !!
+    g_timeout_add(1000, time_ticker, user_data);
 }
 
 /* ------------------------------------------------------------------- */
@@ -137,10 +173,11 @@ static void on_activate(GApplication *app, gpointer user_data)
 /* ------------------------------------------------------------------- */
 int main(int argc, char **argv)
 {
-    /* Anwendung */
+    /* Anwendungs-Struktur init. */
+    AppData app_data;
     g_autoptr(AdwApplication) app =
                         adw_application_new(APP_ID, G_APPLICATION_DEFAULT_FLAGS);
-    g_signal_connect(app, "activate", G_CALLBACK(on_activate), NULL);
+    g_signal_connect(app, "activate", G_CALLBACK(on_activate), &app_data);
 
     /* Localiziation-Setup */
     const gchar *locale_path = NULL;
