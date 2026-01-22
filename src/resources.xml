@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <!-- APP_ID -->
+  <gresource prefix="/io/github/supertoq/clock">
+    <file alias="icon1">icon1.svg</file>
+    <file alias="icon2">icon2.svg</file>
+    <file alias="icon3">icon3.svg</file>
+  </gresource>
+</gresources>
