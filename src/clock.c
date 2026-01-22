@@ -12,7 +12,7 @@
  * The Use of this code and execution of the applications is at your own risk, I accept no liability!
  */
 // 
-#define APP_VERSION    "0.1.6"//_1
+#define APP_VERSION    "0.1.7"//_0
 #define APP_ID         "io.github.supertoq.clock"
 #define APP_NAME       "Clock"
 #define APP_DOMAINNAME "supertoq-clock"
@@ -44,10 +44,97 @@ static ToastManager toast_manager = { NULL };
 
 typedef struct {              // für draw_callback()
     GtkWidget *drawing;       // Widget wird beim Skalieren neu gezeichnet
+    GtkWidget *btn_timer;
     char time_str[16];        // Uhrzeit als String mit Bytes
     double cached_font_size;
     int last_w, last_h;
 } AppData;
+
+/* ----- Callback: About-Dialog öffnen ------------------------------ */
+static void show_about(GSimpleAction *action, GVariant *parameter, gpointer user_data)
+{ (void)action; (void)parameter;
+
+    AdwApplication *app = ADW_APPLICATION(user_data);
+    /* About‑Dialog anlegen */
+    AdwAboutDialog *about = ADW_ABOUT_DIALOG(adw_about_dialog_new());
+    adw_about_dialog_set_application_name(about, APP_NAME);
+    adw_about_dialog_set_version(about, APP_VERSION);
+    adw_about_dialog_set_developer_name(about, "supertoq");
+    adw_about_dialog_set_website(about, "https://github.com/supertoq/Clock");
+    //adw_about_dialog_set_comments(about, " ... ");
+
+    /* Lizenz – BSD3  */
+    adw_about_dialog_set_license_type(about, GTK_LICENSE_BSD);
+    adw_about_dialog_set_license(about,
+        "Copyright © 2026, supertoq\n\n"
+        "This program comes WITHOUT ANY WARRANTY.\n"
+        "Follow the link to view the license details: "
+        "<a href=\"https://opensource.org/license/BSD-3-clause\"><b>Modified BSD License</b></a>\n"
+        "\n"
+        "Application Icons by SVG Repo. \n"
+        "<a href=\"https://www.svgrepo.com\">www.svgrepo.com</a> \n"
+        "Thanks to SVG Repo for sharing their free icons, "
+        "we appreciate your generosity and respect your work.\n"
+        "The icons are licensed under the \n"
+        "<a href=\"https://www.svgrepo.com/page/licensing/#CC%20Attribution\">"
+        "Creative Commons Attribution License.</a> \n"
+        "Colours, shapes, and sizes of the symbols (icons) have been slightly modified from the original, "
+        "some symbols have been combined with each other.\n"
+        );
+
+      /* Dialog-Icon aus g_resource */
+      adw_about_dialog_set_application_icon(about, APP_ID);   //IconName
+
+    /* Dialog innerhalb (modal) des Haupt-Fensters anzeigen */
+    GtkWindow *parent = GTK_WINDOW(gtk_widget_get_root(GTK_WIDGET(
+                                   gtk_application_get_active_window(GTK_APPLICATION(app)) )));
+    adw_dialog_present(ADW_DIALOG(about), GTK_WIDGET(parent));
+} // Ende About-Dialog
+
+static void show_settings(GSimpleAction *action, GVariant *parameter, gpointer user_data)
+{ (void)action; (void)parameter;
+
+    AdwNavigationView *settings_nav = ADW_NAVIGATION_VIEW(user_data);
+
+    /* ----- ToolbarView für Settings-Seite ----- */
+    AdwToolbarView *settings_toolbar = ADW_TOOLBAR_VIEW(adw_toolbar_view_new());
+
+    /* ----- Headerbar erzeugen ----- */
+    AdwHeaderBar *settings_header = ADW_HEADER_BAR(adw_header_bar_new());
+    GtkWidget *settings_label = gtk_label_new(_("Einstellungen"));
+    gtk_widget_add_css_class(settings_label, "heading");
+    adw_header_bar_set_title_widget(settings_header, settings_label);
+
+    /* ----- Headerbar einfügen ----- */
+    adw_toolbar_view_add_top_bar(settings_toolbar, GTK_WIDGET(settings_header));
+
+    /* ----- Haupt-BOX der Settings-Seite ----- */
+    GtkWidget *settings_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_set_margin_top(settings_box,    12);   // Rand unterhalb Toolbar
+    gtk_widget_set_margin_bottom(settings_box, 12);   // unterer Rand unteh. der Buttons
+    gtk_widget_set_margin_start(settings_box,  12);   // links
+    gtk_widget_set_margin_end(settings_box,    12);   // rechts
+
+
+// ... !!
+
+    /* ----- ScrolledWindow erstellen und in die settingsBOX einfügen ----- */
+    GtkWidget *scrolled_window = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window), settings_box);
+
+    /* ----- ToolbarView Inhalt in ScrolledWindow einsetzen ----- */
+    adw_toolbar_view_set_content(settings_toolbar, scrolled_window);
+
+    /* ----- NavigationPage anlegen ----- */
+    AdwNavigationPage *settings_page = 
+                      adw_navigation_page_new(GTK_WIDGET(settings_toolbar), _("Einstellungen"));
+    /* ----- Größe nur zum Ausgleichen der Textlänge bei "Große Schrift" ----- */
+    gtk_widget_set_size_request(GTK_WIDGET(settings_page), WIN_WIDTH, WIN_HEIGHT);  // Fenster-Breite u Höche (380, 400)
+
+    /* ----- Page der Settings_nav hinzufügen ----- */
+    adw_navigation_view_push(settings_nav, settings_page);
+}// Ende Einstellungen-Fenster
+
 
 
 /* ----- Zeit-Callback (Zustandsaktualisierung) ----------------------- */
@@ -192,18 +279,46 @@ static void on_activate(GApplication *app, gpointer user_data)
      //                      ├---Seiteninhalt
      //                      .
 
+    /* --- Schaltfläche "Timer" in Headerbar ------------------------- */
+    app_data->btn_timer = gtk_button_new_with_label(_("Timer"));
+    gtk_widget_add_css_class(app_data->btn_timer, "opaque"); // durchsichtig
+//    gtk_widget_add_css_class(app_data->btn_timer, "suggested-action");  // Theme-akzent
+    gtk_widget_set_size_request(app_data->btn_timer, 100, 22);  // Breite 100, Höhe 50px
+    adw_header_bar_pack_start(headerbar, app_data->btn_timer);
+
     /* --- Hamburger-Button innerhalb der Headerbar ------------------ */
     GtkMenuButton *menu_btn = GTK_MENU_BUTTON(gtk_menu_button_new());
     gtk_menu_button_set_icon_name(menu_btn, "open-menu-symbolic");
-    adw_header_bar_pack_start(headerbar, GTK_WIDGET(menu_btn)); // Link in Headerbar
+    adw_header_bar_pack_end(headerbar, GTK_WIDGET(menu_btn)); // Link in Headerbar
 
     /* --- Popover-Menu im Hamburger --------------------------------- */
     GMenu *menu = g_menu_new();
-//    g_menu_append(menu, _("Einstellungen         "), "app.show-settings");
-//    g_menu_append(menu, _("Infos zu OLED Saver   "), "app.show-about");
-//    GtkPopoverMenu *menu_popover = GTK_POPOVER_MENU(
-//               gtk_popover_menu_new_from_model(G_MENU_MODEL(menu)));
-//    gtk_menu_button_set_popover(menu_btn, GTK_WIDGET(menu_popover));
+    g_menu_append(menu, _("Einstellungen         "), "app.show-settings");
+    g_menu_append(menu, _("Infos zu Clock   "), "app.show-about");
+    GtkPopoverMenu *menu_popover = GTK_POPOVER_MENU(
+               gtk_popover_menu_new_from_model(G_MENU_MODEL(menu)));
+    gtk_menu_button_set_popover(menu_btn, GTK_WIDGET(menu_popover));
+
+    /* --- ACTION für Einstellungen u. About-Dialog ------------------ */
+    const GActionEntry about_entry[] = 
+    {
+        { "show-about", // Bezeichnung    - einmalig er GActionMap
+            show_about, // Activate       - Funktion wenn ausgelöst
+                  NULL, // Parameter_type - welcher Datentyp erwartet werden soll
+                  NULL, // State          - Zustand und Zustand-typ(b,s,i,d)
+                  NULL, // Change_state   - für Callback wenn sich state ändert
+                  { 0 } // Padding        - Erweiterungsfeld
+        }
+    }; 
+    const GActionEntry settings_entry[] = 
+    {
+        { "show-settings", show_settings, NULL, NULL, NULL, { 0 } }
+    };
+    /* Registrierung der im Array about_entry definierten Aktionen */ 
+    g_action_map_add_action_entries(G_ACTION_MAP(app), 
+                                          about_entry, G_N_ELEMENTS(   about_entry),      app);
+    g_action_map_add_action_entries(G_ACTION_MAP(app), 
+                                       settings_entry, G_N_ELEMENTS(settings_entry), nav_view);
 
     /* --- ACTION für Einstellungen u. About-Dialog ------------------ */
 // ...
