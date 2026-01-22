@@ -4,22 +4,22 @@
  *
  * gcc $(pkg-config --cflags gtk4 libadwaita-1) -o clock clock.c $(pkg-config --libs gtk4 libadwaita-1)
  *
- * main.c
+ * clock.c
  * Uhrzeit mit dedizierten Thread für die Zeitmessung unabhängig von der GUI
- * 2026-01-21
+ * 2026-01-22
  *
  * Please note:
  * The Use of this code and execution of the applications is at your own risk, I accept no liability!
  */
 // 
-#define APP_VERSION    "0.1.0"//_0
+#define APP_VERSION    "0.1.6"//_1
 #define APP_ID         "io.github.supertoq.clock"
 #define APP_NAME       "Clock"
 #define APP_DOMAINNAME "supertoq-clock"
 /* Fenster in Breite u. Höche (370, 200) */
-#define WIN_WIDTH      420
-#define WIN_HEIGHT     210
-
+#define WIN_WIDTH      400
+#define WIN_HEIGHT     200
+#define MY_FONT        "Adwaita Mono" // Monospace, DejaVu Sans, Source Code Pro, Open Sans, Adwaita Mono
 
 #include <glib.h>
 #include <gtk/gtk.h>
@@ -37,49 +37,118 @@
 #endif
 
 /* ----- Globale Strukturen ------------------------------------------ */
-typedef struct {               // Für ToastOverlay
+typedef struct {               // ToastOverlay
     AdwToastOverlay *toast_overlay;
 } ToastManager;
 static ToastManager toast_manager = { NULL };
 
-typedef struct { 
-    char time_str[32];       // Für die Zeit
-    GtkWidget *time_label;   // Label
+typedef struct {              // für draw_callback()
+    GtkWidget *drawing;       // Widget wird beim Skalieren neu gezeichnet
+    char time_str[16];        // Uhrzeit als String mit Bytes
+    double cached_font_size;
+    int last_w, last_h;
 } AppData;
 
-/* ----- Zeit-Callback ----------------------------------------------- */
+
+/* ----- Zeit-Callback (Zustandsaktualisierung) ----------------------- */
 static gboolean time_ticker(gpointer user_data)
 {
+    /* AppData aus dem Zeiger holen */
     AppData *app_data = user_data;
 
-    time_t now = time(NULL);
-    struct tm *local_time = localtime(&now);
+    /* Aktuelle Zeit holen */
+    time_t now = time(NULL); // Systemzeit
+    struct tm local_time;
+    localtime_r(&now, &local_time); // (r = reentrant)
 
-    // Formatiere die Zeit
-    strftime(app_data->time_str, sizeof(app_data->time_str), "%H:%M:%S", local_time);
+    /* in String umwandeltn */
+    strftime(app_data->time_str, sizeof(app_data->time_str), "%H:%M:%S", &local_time);
 
-    // Setze den Text im Label
-    gtk_label_set_text(GTK_LABEL(app_data->time_label), app_data->time_str);
+    /* Setze den Text im Label */
+    //gtk_label_set_text(GTK_LABEL(app_data->time_label), app_data->time_str);
 
-    return G_SOURCE_CONTINUE;
+    /* Markieren des Widgets als „dirty“ -  für Neuzeichnen */
+    gtk_widget_queue_draw(app_data->drawing);
+
+    return G_SOURCE_CONTINUE; // weiterlaufen
 }
+
+/* ----- Berechnung der Schriftgröße für einen skalierbaren Raum ----- */
+static double fit_font_size(cairo_t *ct, const char *label_text, int width, int height)
+{   // cairo_t = Zeichenkontext-Typ (ausgerüsteter Zeichnungsroboter)
+
+    double size = height; // Ausgangswert = Höhe
+
+    cairo_set_font_size(ct, size); // Schriftgröße im Cairo-Kontext setzen
+
+    cairo_text_extents_t ext; // = Struktur mit exakten geometrischen Daten
+    cairo_text_extents(ct, label_text, &ext); // Cairo misst Text relativ zur gesetzten Schriftgröße
+
+    /* Skalierungsfaktoren berechnen */
+    double scale_w = width  / ext.width;  // max. passende vertik. Skalierung 
+    double scale_h = height / ext.height; // max. passende horizont. Skalierung 
+                                          // Beispiel: Text = 300 px, Fensterbreite ist 200 px
+                                          // scale_w = 200 / 300 = 0.66
+
+    /* MIN() = kleinsten von beiden w und h Werten verwenden hernehmen */ 
+    double min_scale = MIN(scale_w, scale_h);
+    /* Größe berechnen */
+    double result = size * min_scale * 0.85; // x 0.85 Sicherheitsabstand
+    return result; // Grö0en-Wert zurückmelden
+}
+
+/* ----- Zeichenfunktion (wird von GTK selbst aufgerufen) ------------- */
+static void draw_callback(GtkDrawingArea *widget_area, cairo_t *ct, int width, int height, gpointer user_data)
+{  // cairo_t *cr = Zeichenkontext-Typ; user_date = AppData*
+
+    AppData *app = user_data;
+
+    /* Hintergrund */
+//    cairo_set_source_rgb(ct, 1.0, 1.0, 1.0);
+//    cairo_paint(ct);
+
+    /* Vordergrund, Textfarbe aus Theme ermitteln */
+    GdkRGBA color;
+    gtk_widget_get_color(GTK_WIDGET(widget_area), &color);
+    cairo_set_source_rgba(ct, color.red, color.green, color.blue, color.alpha);
+
+    /* Schrift vorbereiten */
+    cairo_select_font_face(
+             ct, MY_FONT,               // Schriftart !! 
+             CAIRO_FONT_SLANT_NORMAL,   // normal / italic / oblique
+             CAIRO_FONT_WEIGHT_NORMAL   // normal / bold
+    );
+
+    /* Schriftgröße berechnen (Nullen sind Platzhalter für Breite) */
+    double font_size = fit_font_size(ct, "00:00:00", width, height);
+    cairo_set_font_size(ct, font_size);
+    //cairo_set_font_size(ct, 40); // testen !!
+
+    /* Text-Ausmaße messen */
+    cairo_text_extents_t ext; // = Struktur mit exakten geometrischen Daten
+    cairo_text_extents(ct, app->time_str, &ext);
+    
+    /* Textzentrierung */
+    double x = (width  - ext.width)  / 2 - ext.x_bearing;
+    double y = (height - ext.height) / 2 - ext.y_bearing;
+
+    /* Text positionieren */
+    cairo_move_to(ct, x, y);
+    //cairo_move_to(ct, 10, 50); // testen !!
+
+    /* Text zeichnen */
+    cairo_show_text(ct, app->time_str);
+    //cairo_show_text(ct, "12:34:56"); // testen !!
+}
+
+
 /* ------------------------------------------------------------------- */
 /* Aktivierungshandler                                                 */
 /* ------------------------------------------------------------------- */
 static void on_activate(GApplication *app, gpointer user_data)
 {
-    /* ----- CSS-Provider für zusätzliche Anpassungen --------------- */
-    // orange=#db9c4a , lightred=#ff8484 , grey=#c0bfbc
-    GtkCssProvider *provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_string(provider,
-                                                         ".time_label {"
-                                                    "  font-size: 64px;"
-                                                                     "}"
-                                                                     );
-    gtk_style_context_add_provider_for_display(gdk_display_get_default(),
-    GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    g_object_unref(provider);
 
+    /* Daten für Anwendungsstruktur */
     AppData *app_data = (AppData *)user_data;
 
     /* ----- Adwaita-Fenster ----------------------------------------- */
@@ -151,12 +220,13 @@ static void on_activate(GApplication *app, gpointer user_data)
     /* --- Haupt-Box zur ToolbarView hinzufügen ------------------- */
     adw_toolbar_view_set_content(toolbar_view, GTK_WIDGET(main_box));
 
-    /* --- Label erstellen ------------- */
-    app_data->time_label = gtk_label_new(NULL);
-    gtk_widget_set_hexpand(app_data->time_label, TRUE);
-    gtk_widget_set_vexpand(app_data->time_label, TRUE);
-    gtk_widget_add_css_class(app_data->time_label, "time_label");
-    gtk_box_append(main_box, app_data->time_label);
+    /* --- DrawingWidget erstellen ------------- */
+    app_data->drawing = gtk_drawing_area_new(); // Zeichenfläche für Cairo_t
+    gtk_widget_set_hexpand(app_data->drawing, TRUE);
+    gtk_widget_set_vexpand(app_data->drawing, TRUE);
+    /* zum Neuzeichnen des Widgets soll GTK folgendes Callback aufrufen */
+    gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(app_data->drawing), draw_callback, app_data, NULL);
+    gtk_box_append(main_box, app_data->drawing);
 
 // !! weitere Elemente hier ...
 
@@ -166,8 +236,9 @@ static void on_activate(GApplication *app, gpointer user_data)
     /* --- Hauptfenster desktop-konform anzeigen ------------------ */
     gtk_window_present(GTK_WINDOW(adw_win));
 
+
     /* ----- Timer starten ---------------------------------------- */
-    g_timeout_add(1000, time_ticker, user_data);
+    g_timeout_add(500, time_ticker, app_data);
 }
 
 /* ------------------------------------------------------------------- */
@@ -179,7 +250,7 @@ int main(int argc, char **argv)
     AppData app_data;
     g_autoptr(AdwApplication) app =
                         adw_application_new(APP_ID, G_APPLICATION_DEFAULT_FLAGS);
-    g_signal_connect(app, "activate", G_CALLBACK(on_activate), &app_data);
+    g_signal_connect(app, "activate", G_CALLBACK(on_activate), &app_data); // Strukturdaten übergeben
 
     /* Localiziation-Setup */
     const gchar *locale_path = NULL;
