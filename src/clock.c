@@ -1,7 +1,8 @@
 /* Clock Copyright (c) 2026 supertoq
- * LICENSE: BSD 2-Clause "Simplified"
+ * LICENSE: BSD 3-Clause "Modified BSD License"
+ * https://opensource.org/license/BSD-3-clause
  *
- * gcc $(pkg-config --cflags gtk4 libadwaita-1) -o toqclock main.c io.github.supertoq.clock.gresource.c $(pkg-config --libs gtk4 libadwaita-1)
+ * gcc $(pkg-config --cflags gtk4 libadwaita-1) -o clock clock.c $(pkg-config --libs gtk4 libadwaita-1)
  *
  * main.c
  * Uhrzeit mit dedizierten Thread für die Zeitmessung unabhängig von der GUI
@@ -11,7 +12,7 @@
  * The Use of this code and execution of the applications is at your own risk, I accept no liability!
  */
 // 
-#define APP_VERSION    "0.0.1"//_0
+#define APP_VERSION    "0.1.0"//_0
 #define APP_ID         "io.github.supertoq.clock"
 #define APP_NAME       "Clock"
 #define APP_DOMAINNAME "supertoq-clock"
@@ -71,9 +72,9 @@ static void on_activate(GApplication *app, gpointer user_data)
     // orange=#db9c4a , lightred=#ff8484 , grey=#c0bfbc
     GtkCssProvider *provider = gtk_css_provider_new();
     gtk_css_provider_load_from_string(provider,
-                                                             "label1 {"
-                                                    "  color: #c0bfbc;"
-                                                                    "}"
+                                                         ".time_label {"
+                                                    "  font-size: 64px;"
+                                                                     "}"
                                                                      );
     gtk_style_context_add_provider_for_display(gdk_display_get_default(),
     GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
@@ -154,6 +155,7 @@ static void on_activate(GApplication *app, gpointer user_data)
     app_data->time_label = gtk_label_new(NULL);
     gtk_widget_set_hexpand(app_data->time_label, TRUE);
     gtk_widget_set_vexpand(app_data->time_label, TRUE);
+    gtk_widget_add_css_class(app_data->time_label, "time_label");
     gtk_box_append(main_box, app_data->time_label);
 
 // !! weitere Elemente hier ...
