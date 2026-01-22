@@ -1,15 +1,15 @@
 # Clock
 A simple desktop clock  
   
-![clock main window](data/img/clock_preview_img1.png?raw=true) 
+![clock main window](data/img/clock_preview_img_light1?raw=true) 
   
 This app is still in its development.
   
   
-# Installation:  
+## Installation: (with Flatpak when available!)  
   
 ```
-flatpak install -y --user io.github.supertoq.oledsaver.flatpak  
+flatpak install -y --user io.github.supertoq.clock.flatpak  
 ```  
   
   
