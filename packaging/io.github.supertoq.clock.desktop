@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Clock
+Comment=A simple desktop clock
+Comment[de]=Uhr
+Exec=supertoq-clock %U
+Icon=io.github.supertoq.clock
+Categories=Utility;
+MimeType=application/x-supertoq-clock;
+StartupWMClass=Clock
+X-Flatpak=io.github.supertoq.clock
+X-AppStream-Metadata=io.github.supertoq.clock.metainfo.xml
+X-AppStream-Screenshot=share/pixmaps/clock_preview_img_light1.png

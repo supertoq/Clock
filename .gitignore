@@ -1,0 +1,7 @@
+.flatpak-builder
+_repo
+_builddir
+_build-dir
+clock.flatpak
+io.github.supertoq.clock.flatpak
+src/clock

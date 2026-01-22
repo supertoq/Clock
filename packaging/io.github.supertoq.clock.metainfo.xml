@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- https://www.freedesktop.org/software/appstream/docs/chap-CatalogData.html#sect-AppStream-XML -->
+<!-- https://www.freedesktop.org/software/appstream/docs/chap-CatalogData.html -->
+
+<component type="desktop">
+
+  <!-- Identifikation -->
+  <id>io.github.supertoq.clock</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <name>Clock</name>
+  <!-- Lizenz -->
+  <project_license>BSD-3-Clause</project_license>
+  <summary>A simple Desktop Clock</summary>
+  <url type="homepage">https://github.com/supertoq/Clock</url>
+  <icon type="stock">io.github.supertoq.clock</icon>
+  <!-- Beschreibung -->
+  <description>
+    <p>!!! Text !!!
+   </p>
+  </description>
+  <!-- Kategorien -->
+  <categories>
+    <category>Utility</category>
+    <category>System</category>
+  </categories>
+  <keywords>
+    <keyword>clock</keyword>
+    <keyword>time</keyword>
+    <keyword>timer</keyword>
+    <keyword>watch</keyword>
+  </keywords>
+  <!-- Screenshot (direkter PNG-Link, z.B. über GitHub-Pages) -->
+  <screenshots>
+      <screenshot type="default">
+        <caption>Clock window</caption>
+        <image type="source">https://raw.githubusercontent.com/supertoq/Clock/refs/heads/main/packaging/clock_preview_img_light1.png</image>
+    </screenshot>
+  </screenshots> 
+  <!-- Releases Information  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx    -->
+<releases>
+  <release version="0.0.0" date="2026-01-22">
+    <description>
+      <p>Initial release </p>
+      <ul>
+        <li>See GitHub for details.</li>
+      </ul>
+    </description>
+  </release>
+  <!-- Previous Releases  -->
+<!--  <release version="0.0.0" date="2026-01-21" />
+ -->
+</releases>
+
+  <content_rating type="oars-1.1" />
+  
+  <launchable type="desktop-id">io.github.supertoq.clock.desktop</launchable>
+  <provides>
+    <binary>supertoq-clock</binary>
+  </provides>
+  <!-- Entwickler -->
+  <developer id="io.github.supertoq">
+    <name>supertoq</name>
+  </developer>
+
+</component>
