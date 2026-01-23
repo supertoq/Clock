@@ -263,20 +263,30 @@ static void timer_page(GSimpleAction *action, GVariant *parameter, gpointer user
     adw_toolbar_view_add_top_bar(timer_toolbar, GTK_WIDGET(timer_header));
 
     /* ----- Haupt-BOX der Timer-Seite ----- */
-    GtkWidget *timer_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 1);
+    GtkBox *timer_box = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 1));
     gtk_widget_set_margin_top   (GTK_WIDGET(timer_box),    1);   // Rand unterhalb Toolbar
-    gtk_widget_set_margin_bottom(GTK_WIDGET(timer_box),   12);   // unterer Rand unteh. der Buttons
-    gtk_widget_set_margin_start (GTK_WIDGET(timer_box),   12);   // links
-    gtk_widget_set_margin_end   (GTK_WIDGET(timer_box),   12);   // rechts
+    gtk_widget_set_margin_bottom(GTK_WIDGET(timer_box),    1);   // unterer Rand unteh. der Buttons
+    gtk_widget_set_margin_start (GTK_WIDGET(timer_box),    1);   // links
+    gtk_widget_set_margin_end   (GTK_WIDGET(timer_box),    1);   // rechts
 
-// ... !!
+    /* Card-Container */
+    GtkWidget *card1 = gtk_frame_new (NULL);
+    gtk_widget_add_css_class(card1, "card");
+    gtk_widget_set_margin_top    (card1, 1);
+    gtk_widget_set_margin_bottom (card1, 1);
+    gtk_widget_set_hexpand    (card1, TRUE);
 
-    /* ----- ScrolledWindow erstellen und in die Timer-BOX einfügen ----- */
-    GtkWidget *scrolled_window = gtk_scrolled_window_new();
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window), timer_box);
+      // inhalt !!
+     GtkWidget *dummy = gtk_label_new("DUMMY-LABEL");
+     gtk_widget_set_margin_top(dummy, 12);
+     gtk_widget_set_margin_bottom(dummy, 12);
+
+    /* Inhalt einfügen */
+    gtk_frame_set_child(GTK_FRAME(card1), dummy); //<- inhalt
+    gtk_box_append(timer_box, card1);
 
     /* ----- ToolbarView Inhalt in ScrolledWindow einsetzen ----- */
-    adw_toolbar_view_set_content(timer_toolbar, scrolled_window);
+    adw_toolbar_view_set_content(timer_toolbar, GTK_WIDGET(timer_box));
 
     /* ----- NavigationPage anlegen ----- */
     AdwNavigationPage *timer_page = 
@@ -300,7 +310,8 @@ static void on_timer_button_clicked(GtkButton *button, gpointer user_data)
 }
 
 static void on_shutdown(GApplication *app, gpointer user_data)
-{
+{ (void)app; (void)user_data;
+
     AppData *app_data = user_data;
 
     /* Auf vorhandenen Timer prüfen und beenden */
@@ -399,19 +410,26 @@ static void on_activate(GApplication *app, gpointer user_data)
     g_action_map_add_action_entries(G_ACTION_MAP(app), 
                                        settings_entry, G_N_ELEMENTS(settings_entry), app_data->nav_view);
 
-// ...
-
     /* --- Haupt-BOX ------------------------------------------------- */
     GtkBox *main_box = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 1));
     gtk_widget_set_margin_top   (GTK_WIDGET(main_box),    1);   // Rand unterhalb Toolbar
-    gtk_widget_set_margin_bottom(GTK_WIDGET(main_box),   24);   // unterer Rand unteh. der Buttons
-    gtk_widget_set_margin_start (GTK_WIDGET(main_box),   20);   // links
-    gtk_widget_set_margin_end   (GTK_WIDGET(main_box),   20);   // rechts
+    gtk_widget_set_margin_bottom(GTK_WIDGET(main_box),   12);   // unterer Rand unteh. der Buttons
+    gtk_widget_set_margin_start (GTK_WIDGET(main_box),    1);   // links
+    gtk_widget_set_margin_end   (GTK_WIDGET(main_box),    1);   // rechts
     gtk_widget_set_hexpand      (GTK_WIDGET(main_box), TRUE);
     gtk_widget_set_vexpand      (GTK_WIDGET(main_box), TRUE);
 
     /* --- Haupt-Box zur ToolbarView hinzufügen ------------------- */
     adw_toolbar_view_set_content(toolbar_view, GTK_WIDGET(main_box));
+
+// Card vorerst unbenutzt, war ein optischer Test
+    /* Card-Container */
+//    GtkWidget *card = gtk_frame_new(NULL);
+//    gtk_widget_add_css_class(card, "card");
+
+//    gtk_widget_set_margin_top(card, 1);
+//    gtk_widget_set_margin_bottom(card, 1);
+//    gtk_widget_set_hexpand(card, TRUE);
 
     /* --- DrawingWidget erstellen ------------- */
     app_data->drawing = gtk_drawing_area_new(); // Zeichenfläche für Cairo_t
@@ -421,8 +439,14 @@ static void on_activate(GApplication *app, gpointer user_data)
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(app_data->drawing), draw_callback, app_data, NULL);
     gtk_box_append(main_box, app_data->drawing);
 
+    /* DrawingArea in die Card */
+//    gtk_frame_set_child(GTK_FRAME(card), app_data->drawing);
+    /* Card in deine main_box */
+//    gtk_box_append(main_box, card);
+
     /* --- Schaltfläche "Timer" in Headerbar ------------------------- */
     app_data->btn_timer = gtk_button_new_with_label(_("Timer"));
+//    gtk_widget_add_css_class(app_data->btn_timer, "custom-timer-button"); !!
     gtk_widget_add_css_class(app_data->btn_timer, "opaque"); // undurchsichtig
 //    gtk_widget_add_css_class(app_data->btn_timer, "suggested-action");  // Theme-akzent
     gtk_widget_set_size_request(app_data->btn_timer, 100, 22);  // Breite 100, Höhe 50px
