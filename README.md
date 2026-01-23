@@ -1,7 +1,7 @@
 # Clock
 A simple desktop clock  
   
-![clock main window](data/img/clock_preview_img_light1?raw=true) 
+![clock main window](data/img/clock_preview_img_light1.png?raw=true) 
   
 This app is still in its development.
   
