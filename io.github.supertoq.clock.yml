@@ -15,7 +15,6 @@ modules:
     build-commands:
       # ----- Erstelle Verzeichnis‑Struktur -----
       - mkdir -p _build/bin _build/share/locale/en_US/LC_MESSAGES _build/share/locale/en_GB/LC_MESSAGES _build/share/applications _build/share/icons/hicolor/scalable/apps _build/share/icons/hicolor/128x128/apps _build/share/icons/hicolor/256x256/apps _build//share/pixmaps
-
       # ----- Resourcesn kompilieren -----
       - glib-compile-resources src/resources.xml --sourcedir=data/icons/ --generate-source --target=src/io.github.supertoq.clock.gresource.c
 
