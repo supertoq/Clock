@@ -12,11 +12,11 @@
  * The Use of this code and execution of the applications is at your own risk, I accept no liability!
  */
 // 
-#define APP_VERSION    "0.1.7"//_0
+#define APP_VERSION    "0.1.9"//_0
 #define APP_ID         "io.github.supertoq.clock"
 #define APP_NAME       "Clock"
 #define APP_DOMAINNAME "supertoq-clock"
-/* Fenster in Breite u. Höche (370, 200) */
+/* Fenster in Breite u. Höche (min 370, 200) */
 #define WIN_WIDTH      400
 #define WIN_HEIGHT     200
 #define MY_FONT        "Adwaita Mono" // Monospace, DejaVu Sans, Source Code Pro, Open Sans, Adwaita Mono
@@ -25,7 +25,6 @@
 #include <gtk/gtk.h>
 #include <adwaita.h>
 #include <time.h>           // für time()
-#include <unistd.h>         // POSIX-Header
 #include <locale.h>         // für setlocale(LC_ALL, "")
 #include <glib/gi18n.h>     // für " _(); "
 
@@ -42,13 +41,17 @@ typedef struct {               // ToastOverlay
 } ToastManager;
 static ToastManager toast_manager = { NULL };
 
-typedef struct {              // für draw_callback()
-    GtkWidget *drawing;       // Widget wird beim Skalieren neu gezeichnet
-    GtkWidget *btn_timer;
-    char time_str[16];        // Uhrzeit als String mit Bytes
-    double cached_font_size;
-    int last_w, last_h;
+typedef struct {                    // AppData-Struktur
+    AdwNavigationView *nav_view;    // das NavView der App
+    GtkWidget         *drawing;     // Widget wird beim Skalieren neu gezeichnet, in draw_callback()
+    GtkWidget         *btn_timer;   // Schaltfläche für Timer
+    guint             timer_id;     // Timer ID
+    char              time_str[16]; // Array für Uhrzeit als String mit 16 Bytes
+    double        cached_font_size; // für zukünftigen Umbau
+    int           last_w, last_h;   // -"-
 } AppData;
+
+
 
 /* ----- Callback: About-Dialog öffnen ------------------------------ */
 static void show_about(GSimpleAction *action, GVariant *parameter, gpointer user_data)
@@ -82,16 +85,17 @@ static void show_about(GSimpleAction *action, GVariant *parameter, gpointer user
         "some symbols have been combined with each other.\n"
         );
 
-      /* Dialog-Icon aus g_resource */
-      adw_about_dialog_set_application_icon(about, APP_ID);   //IconName
+    /* Dialog-Icon aus g_resource */
+    adw_about_dialog_set_application_icon(about, APP_ID);   //IconName
 
     /* Dialog innerhalb (modal) des Haupt-Fensters anzeigen */
     GtkWindow *parent = GTK_WINDOW(gtk_widget_get_root(GTK_WIDGET(
                                    gtk_application_get_active_window(GTK_APPLICATION(app)) )));
     adw_dialog_present(ADW_DIALOG(about), GTK_WIDGET(parent));
+
 } // Ende About-Dialog
 
-static void show_settings(GSimpleAction *action, GVariant *parameter, gpointer user_data)
+static void settings_page(GSimpleAction *action, GVariant *parameter, gpointer user_data)
 { (void)action; (void)parameter;
 
     AdwNavigationView *settings_nav = ADW_NAVIGATION_VIEW(user_data);
@@ -128,8 +132,9 @@ static void show_settings(GSimpleAction *action, GVariant *parameter, gpointer u
     /* ----- NavigationPage anlegen ----- */
     AdwNavigationPage *settings_page = 
                       adw_navigation_page_new(GTK_WIDGET(settings_toolbar), _("Einstellungen"));
+
     /* ----- Größe nur zum Ausgleichen der Textlänge bei "Große Schrift" ----- */
-    gtk_widget_set_size_request(GTK_WIDGET(settings_page), WIN_WIDTH, WIN_HEIGHT);  // Fenster-Breite u Höche (380, 400)
+//    gtk_widget_set_size_request(GTK_WIDGET(settings_page), WIN_WIDTH, WIN_HEIGHT);
 
     /* ----- Page der Settings_nav hinzufügen ----- */
     adw_navigation_view_push(settings_nav, settings_page);
@@ -143,10 +148,15 @@ static gboolean time_ticker(gpointer user_data)
     /* AppData aus dem Zeiger holen */
     AppData *app_data = user_data;
 
+    /* Widget auf Gültigkeit prüfen */
+    if (!GTK_IS_WIDGET(app_data->drawing))
+    return G_SOURCE_REMOVE;
+
     /* Aktuelle Zeit holen */
     time_t now = time(NULL); // Systemzeit
-    struct tm local_time;
-    localtime_r(&now, &local_time); // (r = reentrant)
+    struct tm local_time;    // Struktur für Zeit
+    localtime_r(&now, &local_time); // (r = reentrant = nicht global, jeder Aufruf in eigenen Speicher); 
+                                    // (& = in orig. Variable hineinschreiben)
 
     /* in String umwandeltn */
     strftime(app_data->time_str, sizeof(app_data->time_str), "%H:%M:%S", &local_time);
@@ -206,8 +216,8 @@ static void draw_callback(GtkDrawingArea *widget_area, cairo_t *ct, int width, i
              CAIRO_FONT_WEIGHT_NORMAL   // normal / bold
     );
 
-    /* Schriftgröße berechnen (Nullen sind Platzhalter für Breite) */
-    double font_size = fit_font_size(ct, "00:00:00", width, height);
+    /* Schriftgröße berechnen (Zahlen sind hier Platzhalter für Breite) */
+    double font_size = fit_font_size(ct, "08:08:08", width, height);
     cairo_set_font_size(ct, font_size);
     //cairo_set_font_size(ct, 40); // testen !!
 
@@ -228,6 +238,79 @@ static void draw_callback(GtkDrawingArea *widget_area, cairo_t *ct, int width, i
     //cairo_show_text(ct, "12:34:56"); // testen !!
 }
 
+static void timer_page(GSimpleAction *action, GVariant *parameter, gpointer user_data)
+{ (void)action; (void)parameter;
+
+    AppData *app_data = (AppData *)user_data;
+
+    /* Gültigkeit des NavView prüfen, zum testen ! */
+    g_assert(ADW_IS_NAVIGATION_VIEW(app_data->nav_view));
+//    g_print("nav_view: %p\n", app_data->nav_view);
+//    g_print("is valid: %d\n", ADW_IS_NAVIGATION_VIEW(app_data->nav_view));
+
+     // Hinweis: AdwNavigationView = app_data->nav_view;
+
+    /* ----- ToolbarView für Timer-Seite ----- */
+    AdwToolbarView *timer_toolbar = ADW_TOOLBAR_VIEW(adw_toolbar_view_new());
+
+    /* ----- Headerbar erzeugen ----- */
+    AdwHeaderBar *timer_header = ADW_HEADER_BAR(adw_header_bar_new());
+    GtkWidget *timer_label = gtk_label_new(_("Timer"));
+    gtk_widget_add_css_class(timer_label, "heading");
+    adw_header_bar_set_title_widget(timer_header, timer_label);
+
+    /* ----- Headerbar einfügen ----- */
+    adw_toolbar_view_add_top_bar(timer_toolbar, GTK_WIDGET(timer_header));
+
+    /* ----- Haupt-BOX der Timer-Seite ----- */
+    GtkWidget *timer_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 1);
+    gtk_widget_set_margin_top   (GTK_WIDGET(timer_box),    1);   // Rand unterhalb Toolbar
+    gtk_widget_set_margin_bottom(GTK_WIDGET(timer_box),   12);   // unterer Rand unteh. der Buttons
+    gtk_widget_set_margin_start (GTK_WIDGET(timer_box),   12);   // links
+    gtk_widget_set_margin_end   (GTK_WIDGET(timer_box),   12);   // rechts
+
+// ... !!
+
+    /* ----- ScrolledWindow erstellen und in die Timer-BOX einfügen ----- */
+    GtkWidget *scrolled_window = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window), timer_box);
+
+    /* ----- ToolbarView Inhalt in ScrolledWindow einsetzen ----- */
+    adw_toolbar_view_set_content(timer_toolbar, scrolled_window);
+
+    /* ----- NavigationPage anlegen ----- */
+    AdwNavigationPage *timer_page = 
+                      adw_navigation_page_new(GTK_WIDGET(timer_toolbar), _("Timer"));
+
+    /* ----- Größe nur zum Ausgleichen der Textlänge bei "Große Schrift" ----- */
+//    gtk_widget_set_size_request(GTK_WIDGET(timer_page), WIN_WIDTH, WIN_HEIGHT);
+
+    /* ----- Page der Settings_nav hinzufügen ----- */
+    adw_navigation_view_push(app_data->nav_view, timer_page);
+}// Ende Timer-Fenster
+
+
+
+/* Callback-Funktion für den Button */
+static void on_timer_button_clicked(GtkButton *button, gpointer user_data)
+{ (void)button;
+
+    AppData *app_data = (AppData *)user_data;
+    timer_page(NULL, NULL, app_data);
+}
+
+static void on_shutdown(GApplication *app, gpointer user_data)
+{
+    AppData *app_data = user_data;
+
+    /* Auf vorhandenen Timer prüfen und beenden */
+    if (app_data->timer_id) {
+        g_source_remove(app_data->timer_id);
+        app_data->timer_id = 0;
+    }
+    /* Aufräumen */
+    g_free(app_data);
+}
 
 /* ------------------------------------------------------------------- */
 /* Aktivierungshandler                                                 */
@@ -244,8 +327,11 @@ static void on_activate(GApplication *app, gpointer user_data)
     gtk_window_set_default_size(GTK_WINDOW(adw_win), WIN_WIDTH, WIN_HEIGHT);
     gtk_window_set_resizable(GTK_WINDOW(adw_win), TRUE);
 
-    /* --- NavigationView -------------------------------------------- */
-    AdwNavigationView *nav_view = ADW_NAVIGATION_VIEW(adw_navigation_view_new());
+    /* --- NavigationView (in Struktur) ------------------------------ */
+    app_data->nav_view = ADW_NAVIGATION_VIEW(adw_navigation_view_new());
+
+    /* Überprüfung: */
+    g_assert(app_data->nav_view != NULL); 
 
     /* --- ToolbarView ----------------------------------------------- */
     AdwToolbarView *toolbar_view = ADW_TOOLBAR_VIEW(adw_toolbar_view_new());
@@ -259,11 +345,11 @@ static void on_activate(GApplication *app, gpointer user_data)
 
     /* --- Hauptseite in NavigationView ------------------------------ */
     AdwNavigationPage *main_page = adw_navigation_page_new(GTK_WIDGET(toolbar_view), APP_NAME);
-    adw_navigation_view_push(nav_view, main_page);
+    adw_navigation_view_push(app_data->nav_view, main_page);
 
     /* --- ToastOverlay ---------------------------------------------- */
     toast_manager.toast_overlay = ADW_TOAST_OVERLAY(adw_toast_overlay_new()); // ToastManager in Strukt.
-    adw_toast_overlay_set_child(toast_manager.toast_overlay, GTK_WIDGET(nav_view));
+    adw_toast_overlay_set_child(toast_manager.toast_overlay, GTK_WIDGET(app_data->nav_view));
     /* --- ToastOverlay einfügen  (ToastOverlay-Struktur) ------------ */
     adw_application_window_set_content(adw_win, GTK_WIDGET(toast_manager.toast_overlay));
 
@@ -279,13 +365,6 @@ static void on_activate(GApplication *app, gpointer user_data)
      //                      ├---Seiteninhalt
      //                      .
 
-    /* --- Schaltfläche "Timer" in Headerbar ------------------------- */
-    app_data->btn_timer = gtk_button_new_with_label(_("Timer"));
-    gtk_widget_add_css_class(app_data->btn_timer, "opaque"); // durchsichtig
-//    gtk_widget_add_css_class(app_data->btn_timer, "suggested-action");  // Theme-akzent
-    gtk_widget_set_size_request(app_data->btn_timer, 100, 22);  // Breite 100, Höhe 50px
-    adw_header_bar_pack_start(headerbar, app_data->btn_timer);
-
     /* --- Hamburger-Button innerhalb der Headerbar ------------------ */
     GtkMenuButton *menu_btn = GTK_MENU_BUTTON(gtk_menu_button_new());
     gtk_menu_button_set_icon_name(menu_btn, "open-menu-symbolic");
@@ -294,7 +373,7 @@ static void on_activate(GApplication *app, gpointer user_data)
     /* --- Popover-Menu im Hamburger --------------------------------- */
     GMenu *menu = g_menu_new();
     g_menu_append(menu, _("Einstellungen         "), "app.show-settings");
-    g_menu_append(menu, _("Infos zu Clock   "), "app.show-about");
+    g_menu_append(menu, _("Infos zu Clock        "), "app.show-about");
     GtkPopoverMenu *menu_popover = GTK_POPOVER_MENU(
                gtk_popover_menu_new_from_model(G_MENU_MODEL(menu)));
     gtk_menu_button_set_popover(menu_btn, GTK_WIDGET(menu_popover));
@@ -312,15 +391,14 @@ static void on_activate(GApplication *app, gpointer user_data)
     }; 
     const GActionEntry settings_entry[] = 
     {
-        { "show-settings", show_settings, NULL, NULL, NULL, { 0 } }
+        { "show-settings", settings_page, NULL, NULL, NULL, { 0 } }
     };
     /* Registrierung der im Array about_entry definierten Aktionen */ 
     g_action_map_add_action_entries(G_ACTION_MAP(app), 
-                                          about_entry, G_N_ELEMENTS(   about_entry),      app);
+                                          about_entry, G_N_ELEMENTS(   about_entry), app);
     g_action_map_add_action_entries(G_ACTION_MAP(app), 
-                                       settings_entry, G_N_ELEMENTS(settings_entry), nav_view);
+                                       settings_entry, G_N_ELEMENTS(settings_entry), app_data->nav_view);
 
-    /* --- ACTION für Einstellungen u. About-Dialog ------------------ */
 // ...
 
     /* --- Haupt-BOX ------------------------------------------------- */
@@ -343,6 +421,14 @@ static void on_activate(GApplication *app, gpointer user_data)
     gtk_drawing_area_set_draw_func(GTK_DRAWING_AREA(app_data->drawing), draw_callback, app_data, NULL);
     gtk_box_append(main_box, app_data->drawing);
 
+    /* --- Schaltfläche "Timer" in Headerbar ------------------------- */
+    app_data->btn_timer = gtk_button_new_with_label(_("Timer"));
+    gtk_widget_add_css_class(app_data->btn_timer, "opaque"); // undurchsichtig
+//    gtk_widget_add_css_class(app_data->btn_timer, "suggested-action");  // Theme-akzent
+    gtk_widget_set_size_request(app_data->btn_timer, 100, 22);  // Breite 100, Höhe 50px
+    adw_header_bar_pack_start(headerbar, app_data->btn_timer);
+    g_signal_connect(app_data->btn_timer, "clicked", G_CALLBACK(on_timer_button_clicked), app_data);
+
 // !! weitere Elemente hier ...
 
     /* --- Hauptfenster im Application-Objekt ablegen (!) --------- */
@@ -353,7 +439,7 @@ static void on_activate(GApplication *app, gpointer user_data)
 
 
     /* ----- Timer starten ---------------------------------------- */
-    g_timeout_add(500, time_ticker, app_data);
+    app_data->timer_id = g_timeout_add(500, time_ticker, app_data); // TimerID vergeben
 }
 
 /* ------------------------------------------------------------------- */
@@ -361,11 +447,9 @@ static void on_activate(GApplication *app, gpointer user_data)
 /* ------------------------------------------------------------------- */
 int main(int argc, char **argv)
 {
-    /* Anwendungs-Struktur init. */
-    AppData app_data;
+
     g_autoptr(AdwApplication) app =
                         adw_application_new(APP_ID, G_APPLICATION_DEFAULT_FLAGS);
-    g_signal_connect(app, "activate", G_CALLBACK(on_activate), &app_data); // Strukturdaten übergeben
 
     /* Localiziation-Setup */
     const gchar *locale_path = NULL;
@@ -377,6 +461,13 @@ int main(int argc, char **argv)
 
     /* Resource-Bundle registrieren */
 //    g_resources_register(resources_get_resource());
+
+    /* Anwendungs-Struktur init. */
+//    AppData app_data;                       // als Stack-Allokation, testen !!
+    AppData *app_data = g_new0(AppData, 1); // als Heap-Allokation
+
+    g_signal_connect(app, "activate", G_CALLBACK(on_activate), app_data); // Strukturdaten übergeben
+    g_signal_connect(app, "shutdown", G_CALLBACK(on_shutdown), app_data);
 
     /* Anwendung starten und auf Ereignis warten */
     return g_application_run(G_APPLICATION(app), argc, argv);
