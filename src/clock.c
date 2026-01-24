@@ -6,13 +6,13 @@
  *
  * clock.c
  * Uhrzeit mit dedizierten Thread für die Zeitmessung unabhängig von der GUI
- * 2026-01-22
+ * 2026-01-24
  *
  * Please note:
  * The Use of this code and execution of the applications is at your own risk, I accept no liability!
  */
 // 
-#define APP_VERSION    "0.1.9"//_0
+#define APP_VERSION    "0.2.0"//_0
 #define APP_ID         "io.github.supertoq.clock"
 #define APP_NAME       "Clock"
 #define APP_DOMAINNAME "supertoq-clock"
@@ -47,8 +47,6 @@ typedef struct {                    // AppData-Struktur
     GtkWidget         *btn_timer;   // Schaltfläche für Timer
     guint             timer_id;     // Timer ID
     char              time_str[16]; // Array für Uhrzeit als String mit 16 Bytes
-    double        cached_font_size; // für zukünftigen Umbau
-    int           last_w, last_h;   // -"-
 } AppData;
 
 
@@ -379,11 +377,12 @@ static void on_activate(GApplication *app, gpointer user_data)
     /* --- Hamburger-Button innerhalb der Headerbar ------------------ */
     GtkMenuButton *menu_btn = GTK_MENU_BUTTON(gtk_menu_button_new());
     gtk_menu_button_set_icon_name(menu_btn, "open-menu-symbolic");
-    adw_header_bar_pack_end(headerbar, GTK_WIDGET(menu_btn)); // Link in Headerbar
+// !!    adw_header_bar_pack_end(headerbar, GTK_WIDGET(menu_btn)); // Link in Headerbar
+    adw_header_bar_pack_start(headerbar, GTK_WIDGET(menu_btn)); // Rechts in Headerbar
 
     /* --- Popover-Menu im Hamburger --------------------------------- */
     GMenu *menu = g_menu_new();
-    g_menu_append(menu, _("Einstellungen         "), "app.show-settings");
+// vorerst Aus !!    g_menu_append(menu, _("Einstellungen         "), "app.show-settings");
     g_menu_append(menu, _("Infos zu Clock        "), "app.show-about");
     GtkPopoverMenu *menu_popover = GTK_POPOVER_MENU(
                gtk_popover_menu_new_from_model(G_MENU_MODEL(menu)));
@@ -450,7 +449,7 @@ static void on_activate(GApplication *app, gpointer user_data)
     gtk_widget_add_css_class(app_data->btn_timer, "opaque"); // undurchsichtig
 //    gtk_widget_add_css_class(app_data->btn_timer, "suggested-action");  // Theme-akzent
     gtk_widget_set_size_request(app_data->btn_timer, 100, 22);  // Breite 100, Höhe 50px
-    adw_header_bar_pack_start(headerbar, app_data->btn_timer);
+// vorerst AUS !!   adw_header_bar_pack_start(headerbar, app_data->btn_timer); 
     g_signal_connect(app_data->btn_timer, "clicked", G_CALLBACK(on_timer_button_clicked), app_data);
 
 // !! weitere Elemente hier ...
