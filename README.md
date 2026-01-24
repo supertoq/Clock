@@ -1,9 +1,9 @@
 # Clock
 A simple desktop clock  
   
-![clock main window](packaging/clock_preview_img_light1.png?raw=true) 
+![clock main window](data/img/clock_preview_img_light1.png?raw=true) 
   
-![clock main window](packaging/clock_preview_img_light2.png?raw=true) 
+![clock main window](data/img/clock_preview_img_light2.png?raw=true) 
   
 The main function is to display the time, which can be continuously scaled to any size.  
   
