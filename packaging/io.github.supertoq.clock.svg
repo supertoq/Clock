@@ -1,9 +1,16 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
-<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
-	 viewBox="0 0 512 512" xml:space="preserve">
-<circle style="fill:#F2F2F4;" cx="256" cy="256" r="256"/>
-<path style="fill:#DFDFE1;" d="M256,0v512c141.385,0,256-114.615,256-256S397.385,0,256,0z"/>
-<polygon style="fill:#88888F;" points="201.143,155.429 201.143,310.857 356.571,310.857 356.571,256 256,256 256,155.429 "/>
-<rect x="256" y="256" style="fill:#56545A;" width="100.571" height="54.857"/>
+<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" xmlns:bx="https://boxy-svg.com">
+  <defs>
+    <bx:export>
+      <bx:file format="svg" href="#object-3" path="Unbetitelt 4.svg"/>
+      <bx:file format="svg" path="Unbetitelt 5.svg"/>
+    </bx:export>
+    <linearGradient gradientUnits="userSpaceOnUse" x1="127" y1="11" x2="127" y2="245" id="gradient-0" gradientTransform="matrix(0.897436, 0, 0, 0.897436, 14.025645, 13.128206)">
+      <stop offset="0" style="stop-color: rgb(72.157% 72.157% 72.157%)"/>
+      <stop offset="1" style="stop-color: rgb(41.617% 41.617% 41.617%)"/>
+    </linearGradient>
+  </defs>
+  <circle style="fill: rgb(255, 255, 255); stroke-linecap: square; stroke-miterlimit: 17.7; stroke: url(&quot;#gradient-0&quot;); stroke-width: 8px;" cx="128" cy="128" r="105" id="object-3"/>
+  <rect x="135.012" y="114.794" width="58.802" height="26.993" style="fill: rgb(86, 84, 90);"/>
+  <rect x="110.512" y="38.414" width="32.482" height="106.623" style="fill: rgb(136, 136, 143); stroke-linecap: round; stroke-dashoffset: -1px; stroke-miterlimit: 1; vector-effect: non-scaling-stroke; paint-order: fill;" rx="18.331" ry="18.331"/>
 </svg>
