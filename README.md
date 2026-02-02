@@ -8,7 +8,7 @@ A simple desktop clock
 The main function is to display the time, which can be continuously scaled to any size.  
   
   
-## Installation:  
+## Installing:  
 The quickest way to install supertoq's Clock is to download the application from the [Releases](https://github.com/supertoq/Clock/releases) page.  
 Installation proceeds as follows:  
 ```
@@ -18,12 +18,11 @@ cd ~/Downloads
 flatpak install -y --user io.github.supertoq.clock.flatpak  
 ```  
   
-You can also build the application yourself from the transparent source code; here’s one way using Flatpak Builder.
-
+You can also build the application yourself from the source code. One way to do this is using Flatpak Builder.
   
-## Building and Installing with Flatpak Builder.  
+## Building with Flatpak Builder.  
 
-### Preparation and Dev Depentencies:
+### Dependencies:
   
 #### Ubuntu/Debian  
 ```
@@ -32,15 +31,27 @@ sudo apt update && sudo apt install flatpak flatpak-builder
   
 #### Fedora  
 ```
-sudo dnf install flatpak flatpak-builder 
+sudo dnf upgrade && sudo dnf install flatpak flatpak-builder 
 ```  
   
 #### Arch
 ```
-sudo pacman -S flatpak flatpak-builder 
+sudo pacman -Syu && sudo pacman -S flatpak flatpak-builder 
 ```  
 
-### Add Flathub repository: 
+### Add Flathub Repository: 
+```
+flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo 
+```  
+  
+### Install the GNOME SDK 49: 
+```
+flatpak install org.gnome.Sdk/x86_64/49
+```  
+  
+## Building the Flatpak File:
+  
+### Clone Repository:  
 ```
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo 
 ```  
@@ -64,18 +75,16 @@ cd Clock
 flatpak-builder --user --install --force-clean _build-dir io.github.supertoq.clock.yml 
 ```  
   
-## Run Clock:  
+### Running:  
 ```
 flatpak run io.github.supertoq.clock 
 ```  
   
-## If you want to uninstall Clock:  
+#### If you want to uninstall: 
 ```
 flatpak uninstall --delete-data -y io.github.supertoq.clock 
 ```  
   
 > [!Note]  
-> This code is part of my learning project.  
-Use of the code and execution of the application is at your own risk; 
-I accept no liability!
+> Use of this code and running the application is at your own risk. I accept no liability.
   
