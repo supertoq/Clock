@@ -10,7 +10,7 @@ A simple desktop clock
 The main function is to display the time, which can be continuously scaled to any size.  
   
   
-## Installing:  
+## Installing  
 The quickest way to install supertoq's Clock is to download the application from the [Releases](https://github.com/supertoq/Clock/releases) page.  
 Installation proceeds as follows:  
 ```
@@ -22,7 +22,7 @@ flatpak install -y --user io.github.supertoq.clock.flatpak
   
 You can also build the application yourself from the source code. One way to do this is using Flatpak Builder.
   
-## Building with Flatpak Builder.  
+## Building with Flatpak Builder  
 
 ### Dependencies:
   
@@ -51,7 +51,7 @@ flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flat
 flatpak install org.gnome.Sdk/x86_64/49
 ```  
   
-## Building the Flatpak File:
+## Building  
   
 ### Clone Repository:  
 ```
@@ -65,12 +65,12 @@ cd Clock
 flatpak-builder --user --install --force-clean _build-dir io.github.supertoq.clock.yml 
 ```  
   
-### Running:  
+## Running  
 ```
 flatpak run io.github.supertoq.clock 
 ```  
   
-#### If you want to uninstall: 
+### If you want to uninstall: 
 ```
 flatpak uninstall --delete-data -y io.github.supertoq.clock 
 ```  
@@ -78,3 +78,4 @@ flatpak uninstall --delete-data -y io.github.supertoq.clock
 > [!Note]  
 > Use of this code and running the application is at your own risk. I accept no liability.
   
+
