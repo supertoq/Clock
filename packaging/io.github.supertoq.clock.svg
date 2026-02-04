@@ -9,8 +9,12 @@
       <stop offset="0" style="stop-color: rgb(72.157% 72.157% 72.157%)"/>
       <stop offset="1" style="stop-color: rgb(41.617% 41.617% 41.617%)"/>
     </linearGradient>
+    <linearGradient gradientUnits="userSpaceOnUse" x1="126.753" y1="38.414" x2="126.753" y2="145.037" id="gradient-1">
+      <stop offset="0" style="stop-color: rgb(20.392% 20.392% 21.176% / 0.8)"/>
+      <stop offset="1" style="stop-color: rgb(13.149% 13.15% 13.884% / 0.8)"/>
+    </linearGradient>
   </defs>
-  <circle style="fill: rgb(255, 255, 255); stroke-linecap: square; stroke-miterlimit: 17.7; stroke: url(&quot;#gradient-0&quot;); stroke-width: 8px;" cx="128" cy="128" r="105" id="object-3"/>
-  <rect x="135.012" y="114.794" width="58.802" height="26.993" style="fill: rgb(86, 84, 90);"/>
-  <rect x="110.512" y="38.414" width="32.482" height="106.623" style="fill: rgb(136, 136, 143); stroke-linecap: round; stroke-dashoffset: -1px; stroke-miterlimit: 1; vector-effect: non-scaling-stroke; paint-order: fill;" rx="18.331" ry="18.331"/>
+  <circle style="fill: rgb(255, 255, 255); stroke-linecap: square; stroke-miterlimit: 17.7; stroke: url(&quot;#gradient-0&quot;); stroke-width: 5px;" cx="128" cy="128" r="105" id="object-3"/>
+  <path d="M 135.012 114.794 L 193.814 114.794 L 193.814 114.891 L 216.969 128.243 L 193.814 141.611 L 193.814 141.787 L 135.012 141.787 Z" style="fill: rgb(86, 84, 90);"/>
+  <rect x="110.512" y="38.414" width="32.482" height="106.623" style="fill: rgb(136, 136, 143); stroke-linecap: round; stroke-dashoffset: -1px; stroke-miterlimit: 1; vector-effect: non-scaling-stroke; paint-order: fill; stroke-width: 2px; stroke: url(&quot;#gradient-1&quot;);" rx="18.331" ry="18.331"/>
 </svg>
