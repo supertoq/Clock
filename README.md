@@ -1,3 +1,5 @@
+<img src="packaging/io.github.supertoq.clock.svg" height="128">
+
 # Clock
 A simple desktop clock  
   
@@ -52,18 +54,6 @@ flatpak install org.gnome.Sdk/x86_64/49
 ## Building the Flatpak File:
   
 ### Clone Repository:  
-```
-flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo 
-```  
-  
-### Within Flatpak, the `Gnome SDK 49` is required: 
-```
-flatpak install org.gnome.Sdk/x86_64/49
-```  
-  
-## Install Clock:
-  
-### Clone repository:  
 ```
 git clone https://github.com/supertoq/Clock.git 
 ```  
