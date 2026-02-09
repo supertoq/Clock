@@ -1,4 +1,4 @@
-<img src="packaging/io.github.supertoq.clock.svg" height="128">
+<img src="packaging/128px.png" height="128">
 
 # Clock
 A simple desktop clock  
