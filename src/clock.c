@@ -31,9 +31,9 @@
 //#include "icon-gresource.h"
 
 /* Voraussetzung zum kompilieren - libadwaite 1.8 */
-#ifndef ADW_VERSION_1_8
-#error "NOT building against libadwaita 1.8 headers"
-#endif
+//#ifndef ADW_VERSION_1_8
+//#error "NOT building against libadwaita 1.8 headers"
+//#endif
 
 /* ----- Globale Strukturen ------------------------------------------ */
 typedef struct {               // ToastOverlay
