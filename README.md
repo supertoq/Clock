@@ -52,7 +52,7 @@ git clone https://github.com/supertoq/clock.git
 cd clock
 ```  
 ```
-flatpak-builder --user --install --force-clean _build-dir io.github.supertoq.clock.yml 
+flatpak run org.flatpak.Builder --user --install --force-clean _build-dir io.github.supertoq.clock.yml 
 ```  
   
 ### Running The Application  
